@@ -1,0 +1,12 @@
+fastapi==0.115.11
+uvicorn==0.34.0
+sqlalchemy==2.0.38
+asyncpg==0.30.0
+alembic==1.15.1
+psycopg2==2.9.9
+python-dotenv==0.17.1
+gunicorn==23.0.0
+pydantic==2.10.6
+websockets==15.0.1
+sqladmin==0.20.1
+openai==0.27.0

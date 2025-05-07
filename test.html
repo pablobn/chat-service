@@ -1,0 +1,191 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Chat WebSocket</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      padding: 20px;
+      background-color: #f5f5f5;
+    }
+    header {
+      margin-bottom: 10px;
+    }
+    #chat-container {
+      width: 100%;
+      max-width: 600px;
+      display: flex;
+      flex-direction: column;
+      border: 1px solid #ccc;
+      border-radius: 8px;
+      background-color: #fff;
+    }
+    #chat {
+      flex: 1;
+      padding: 15px;
+      height: 400px;
+      overflow-y: auto;
+      border-bottom: 1px solid #ccc;
+    }
+    .message {
+      margin: 5px 0;
+      line-height: 1.4;
+    }
+    .bot {
+      color: #155724;
+      background: #d4edda;
+      align-self: flex-start;
+      padding: 8px;
+      border-radius: 4px;
+    }
+    .user {
+      color: #004085;
+      background: #cce5ff;
+      align-self: flex-end;
+      padding: 8px;
+      border-radius: 4px;
+    }
+    .system {
+      color: #856404;
+      background: #fff3cd;
+      text-align: center;
+      padding: 6px;
+      border-radius: 4px;
+      font-size: 0.9em;
+    }
+    #controls {
+      display: flex;
+      padding: 10px;
+      gap: 10px;
+    }
+    #modeSelect, #messageInput, #sendBtn, #reconnectBtn {
+      font-size: 1em;
+    }
+    #messageInput {
+      flex: 1;
+      padding: 8px;
+      border: 1px solid #ccc;
+      border-radius: 4px;
+    }
+    #sendBtn, #reconnectBtn {
+      padding: 8px 12px;
+      border: none;
+      background-color: #007bff;
+      color: #fff;
+      border-radius: 4px;
+      cursor: pointer;
+    }
+    #sendBtn:disabled, #reconnectBtn:disabled {
+      background-color: #aaa;
+      cursor: not-allowed;
+    }
+  </style>
+</head>
+<body>
+  <header>
+    <h1>Chat WebSocket</h1>
+  </header>
+  <div id="chat-container">
+    <div id="chat"></div>
+    <div id="controls">
+      <select id="modeSelect">
+        <option value="messages">Chat normal</option>
+        <option value="chatgpt">Chat con ChatGPT</option>
+      </select>
+      <input type="text" id="messageInput" placeholder="Escribe un mensaje..." autocomplete="off" />
+      <button id="sendBtn" disabled>Enviar</button>
+      <button id="reconnectBtn" disabled>Reconectar</button>
+    </div>
+  </div>
+
+  <script>
+    const roomId = 1; // Identificador de sala
+    const chatDiv = document.getElementById("chat");
+    const messageInput = document.getElementById("messageInput");
+    const modeSelect = document.getElementById("modeSelect");
+    const sendBtn = document.getElementById("sendBtn");
+    const reconnectBtn = document.getElementById("reconnectBtn");
+    let socket;
+
+    // Conectar al WebSocket según modo
+    const connectSocket = () => {
+      if (socket && socket.readyState === WebSocket.OPEN) return;
+      const mode = modeSelect.value;
+      socket = new WebSocket(`ws://localhost:8004/${mode}/${roomId}`);
+
+      socket.addEventListener('open', () => {
+        appendMessage(`🔌 Conectado en modo: ${mode}`, 'system');
+        updateControls(true);
+      });
+
+      socket.addEventListener('message', event => {
+        try {
+          const data = JSON.parse(event.data);
+          const senderClass = data.from === 'ChatGPT' ? 'bot' : 'user';
+          appendMessage(`[${data.from || 'usuario'}]: ${data.message}`, senderClass);
+        } catch (err) {
+          console.error('Error al parsear mensaje:', err);
+        }
+      });
+
+      socket.addEventListener('close', () => {
+        appendMessage('❌ Conexión cerrada', 'system');
+        updateControls(false);
+      });
+
+      socket.addEventListener('error', err => {
+        console.error('WebSocket error:', err);
+      });
+    };
+
+    // Enviar mensaje
+    const sendMessage = () => {
+      const message = messageInput.value.trim();
+      if (message && socket && socket.readyState === WebSocket.OPEN) {
+        socket.send(message);
+        appendMessage(message, 'user');
+        messageInput.value = '';
+        updateControls(true);
+      }
+    };
+
+    // Añadir mensaje al chat
+    const appendMessage = (text, type) => {
+      const p = document.createElement('p');
+      p.textContent = text;
+      p.classList.add('message', type);
+      chatDiv.appendChild(p);
+      chatDiv.scrollTop = chatDiv.scrollHeight;
+    };
+
+    // Habilitar o deshabilitar controles
+    const updateControls = connected => {
+      sendBtn.disabled = !(connected && messageInput.value.trim());
+      messageInput.disabled = !connected;
+      reconnectBtn.disabled = connected;
+    };
+
+    // Eventos
+    modeSelect.addEventListener('change', () => {
+      if (socket && socket.readyState === WebSocket.OPEN) {
+        socket.close();
+      }
+      connectSocket();
+    });
+    messageInput.addEventListener('input', () => updateControls(socket && socket.readyState === WebSocket.OPEN));
+    messageInput.addEventListener('keydown', e => { if (e.key === 'Enter') sendBtn.click(); });
+    sendBtn.addEventListener('click', sendMessage);
+    reconnectBtn.addEventListener('click', () => {
+      connectSocket();
+    });
+
+    // Iniciar conexión
+    connectSocket();
+  </script>
+</body>
+</html>

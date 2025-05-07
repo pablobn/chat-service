@@ -1,0 +1,53 @@
+services:
+  chat-service:
+    container_name: chat-service
+    image: chat-service:v1
+    build:
+      context: .
+      dockerfile: ./config/Dockerfile
+    volumes:
+      - chat-volume:/srcs
+    env_file:
+      - .env
+    depends_on:
+      - chat-db
+    ports:
+      - "8004:8004"
+    networks:
+      - chat_network
+    restart: unless-stopped
+    stop_grace_period: 2s
+
+  chat-db:
+    container_name: chat-db
+    image: postgres:16.2-alpine3.19
+    environment:
+      POSTGRES_DB: ${DB_NAME}
+      POSTGRES_USER: ${DB_USER}
+      POSTGRES_PASSWORD: ${DB_PASSWORD}
+    command: ["postgres", "-c", "log_statement=all", "-c", "log_destination=stderr"]
+    volumes:
+      - chat-data:/var/lib/postgresql/data
+    ports:
+      - "5435:5432"
+    networks:
+      - chat_network
+    restart: unless-stopped
+
+networks:
+  chat_network:
+    driver: bridge
+
+volumes:
+  chat-volume:
+    driver: local
+    driver_opts:
+      type: none
+      device: ./backend
+      o: bind
+  chat-data:
+    driver: local
+    driver_opts:
+      type: none
+      device: ./db-storage
+      o: bind
