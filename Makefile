@@ -21,7 +21,7 @@ endif
 PROJECTFOLDER := $(shell pwd)
 
 # Objetivos principales
-all: run
+all: build run
 
 # Construcción usando el caché
 build:

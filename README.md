@@ -31,4 +31,15 @@ This microservice, built with **FastAPI** in Python, implements a chat system th
 
 ```bash
 git clone https://github.com/your-username/chat-service.git
-cd chat-service
+```
+2. **Start the service**
+
+```bash
+Use make to build and run the service. You will need to have Docker installed.
+
+make build: builds the containers
+
+make run: starts the service
+
+make down: stops and removes the containers
+```
