@@ -40,7 +40,7 @@ This microservice, developed with **FastAPI** in Python, provides an interactive
 Clone the project from GitHub by executing:
 
 ```bash
-git clone https://github.com/your-username/chat-service.git
+git clone git@github.com:pablobn/chat-service.git
 ```
 
 ### 2️⃣ Run with Docker
